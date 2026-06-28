@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text-Tools – Konvertierungs-Tools</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">🔧 <span>KONVERTER</span></a>
+  <button id="nav-toggle" class="nav-toggle"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="text.html">Text</a></li><li><a href="farbe.html">Farbe</a></li><li><a href="hash.html">Hash</a></li><li><a href="base64.html">Base64</a></li><li><a href="json-csv.html">JSON/CSV</a></li><li><a href="datum.html">Datum/Zeit</a></li>
+  </ul>
+</div></nav>
+<div class="page-header"><span class="icon">📝</span><h1><em>TEXT</em>-TOOLS</h1><p>Transformieren · Zählen · Formatieren</p></div>
+<main>
+  <div class="card">
+    <h2>📝 Eingabe</h2>
+    <div class="field"><label>Text</label><textarea id="input" rows="6" placeholder="Hier Text eingeben…" oninput="updateStats()"></textarea></div>
+    <div style="font-size:.78rem;color:var(--muted);font-family:var(--mono);margin-bottom:.75rem" id="stats">Zeichen: 0 · Wörter: 0 · Zeilen: 0 · Absätze: 0</div>
+    <div class="btn-row">
+      <button class="btn btn-sm" onclick="transform('upper')">GROSSBUCHSTABEN</button>
+      <button class="btn btn-sm" onclick="transform('lower')">kleinbuchstaben</button>
+      <button class="btn btn-sm" onclick="transform('title')">Titel Groß</button>
+      <button class="btn btn-sm" onclick="transform('sentence')">Satz groß</button>
+      <button class="btn btn-sm" onclick="transform('reverse')">Umkehren</button>
+      <button class="btn btn-sm" onclick="transform('slug')">slug-format</button>
+      <button class="btn btn-sm" onclick="transform('trim')">Leerzeichen trim</button>
+      <button class="btn btn-sm" onclick="transform('trim-lines')">Zeilen trim</button>
+      <button class="btn btn-sm" onclick="transform('remove-empty')">Leerzeilen entf.</button>
+      <button class="btn btn-sm" onclick="transform('sort')">Zeilen sortieren</button>
+      <button class="btn btn-sm" onclick="transform('dedupe')">Duplikate entf.</button>
+      <button class="btn btn-sm" onclick="transform('camel')">camelCase</button>
+      <button class="btn btn-sm" onclick="transform('snake')">snake_case</button>
+      <button class="btn btn-sm" onclick="transform('kebab')">kebab-case</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>✅ Ergebnis</h2>
+    <div class="output" id="output"><span style="color:var(--muted)">Transformation wählen…</span>
+      <button class="copy-corner" onclick="copyOut()">Kopieren</button>
+    </div>
+    <div class="btn-row" style="margin-top:.75rem">
+      <button class="btn btn-sm" onclick="useResult()">↑ Als Eingabe verwenden</button>
+    </div>
+  </div>
+</main>
+<footer><p>Alle Berechnungen lokal. <a href="../index.html">Alle Tools</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+function updateStats(){
+  const t=document.getElementById('input').value;
+  const chars=t.length, words=t.trim()?t.trim().split(/\s+/).length:0;
+  const lines=t.split('\n').length, paras=t.split(/\n\s*\n/).filter(p=>p.trim()).length;
+  document.getElementById('stats').textContent=`Zeichen: ${chars} · Wörter: ${words} · Zeilen: ${lines} · Absätze: ${paras}`;
+}
+function transform(type){
+  let t=document.getElementById('input').value;
+  let r=t;
+  if(type==='upper') r=t.toUpperCase();
+  else if(type==='lower') r=t.toLowerCase();
+  else if(type==='title') r=t.replace(/\b\w/g,c=>c.toUpperCase());
+  else if(type==='sentence') r=t.charAt(0).toUpperCase()+t.slice(1).toLowerCase();
+  else if(type==='reverse') r=t.split('').reverse().join('');
+  else if(type==='slug') r=t.toLowerCase().replace(/[äöü]/g,c=>({ä:'ae',ö:'oe',ü:'ue'}[c]||c)).replace(/ß/g,'ss').replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-');
+  else if(type==='trim') r=t.replace(/[ \t]+/g,' ').trim();
+  else if(type==='trim-lines') r=t.split('\n').map(l=>l.trim()).join('\n');
+  else if(type==='remove-empty') r=t.split('\n').filter(l=>l.trim()).join('\n');
+  else if(type==='sort') r=t.split('\n').sort((a,b)=>a.localeCompare(b,'de')).join('\n');
+  else if(type==='dedupe') r=[...new Set(t.split('\n'))].join('\n');
+  else if(type==='camel') r=t.replace(/(?:^\w|[A-Z]|\b\w)/g,(w,i)=>i===0?w.toLowerCase():w.toUpperCase()).replace(/\s+/g,'');
+  else if(type==='snake') r=t.trim().toLowerCase().replace(/\s+/g,'_');
+  else if(type==='kebab') r=t.trim().toLowerCase().replace(/\s+/g,'-');
+  document.getElementById('output').innerHTML=r.replace(/</g,'&lt;')+'<button class="copy-corner" onclick="copyOut()">Kopieren</button>';
+  document.getElementById('output').dataset.raw=r;
+}
+function copyOut(){
+  const raw=document.getElementById('output').dataset.raw||document.getElementById('output').textContent.replace('Kopieren','').trim();
+  navigator.clipboard.writeText(raw);
+}
+function useResult(){
+  const raw=document.getElementById('output').dataset.raw||'';
+  if(raw){document.getElementById('input').value=raw;updateStats();}
+}
+</script>
+</body></html>

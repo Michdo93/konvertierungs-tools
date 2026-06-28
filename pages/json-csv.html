@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON / CSV – Konvertierungs-Tools</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav><div class="nav-inner">
+  <a href="../index.html" class="nav-brand">🔧 <span>KONVERTER</span></a>
+  <button id="nav-toggle" class="nav-toggle"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="2" y1="6" x2="20" y2="6"/><line x1="2" y1="11" x2="20" y2="11"/><line x1="2" y1="16" x2="20" y2="16"/></svg></button>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="../index.html">Start</a></li><li><a href="text.html">Text</a></li><li><a href="farbe.html">Farbe</a></li><li><a href="hash.html">Hash</a></li><li><a href="base64.html">Base64</a></li><li><a href="json-csv.html">JSON/CSV</a></li><li><a href="datum.html">Datum/Zeit</a></li>
+  </ul>
+</div></nav>
+<div class="page-header"><span class="icon">📊</span><h1>JSON / <em>CSV</em></h1><p>Formatieren · Minifizieren · Validieren · Konvertieren</p></div>
+<main>
+  <!-- JSON Formatter -->
+  <div class="card">
+    <h2>📄 JSON Formatter</h2>
+    <div class="field"><label>JSON eingeben</label><textarea id="json-in" rows="7" placeholder='{"name":"Max","alter":30,"aktiv":true}'></textarea></div>
+    <div class="btn-row">
+      <button class="btn btn-sm" onclick="formatJSON()">Formatieren</button>
+      <button class="btn btn-sm" onclick="minifyJSON()">Minifizieren</button>
+      <button class="btn btn-sm" onclick="validateJSON()">Validieren</button>
+      <button class="btn btn-sm" onclick="sortJSON()">Schlüssel sort.</button>
+    </div>
+    <div class="output" id="json-out" style="margin-top:.75rem;max-height:300px;overflow:auto"><span style="color:var(--muted)">Ausgabe…</span>
+      <button class="copy-corner" onclick="copyEl('json-out')">Kopieren</button>
+    </div>
+  </div>
+
+  <!-- JSON ↔ CSV -->
+  <div class="card">
+    <h2>⇄ JSON ↔ CSV</h2>
+    <div class="two-col">
+      <div>
+        <div class="field"><label>JSON (Array of Objects)</label><textarea id="jc-json" rows="7" placeholder='[{"name":"Max","alter":30},{"name":"Lena","alter":25}]'></textarea></div>
+        <button class="btn btn-sm" onclick="jsonToCsv()">→ CSV</button>
+      </div>
+      <div class="arrow-mid">⇄</div>
+      <div>
+        <div class="field"><label>CSV</label><textarea id="jc-csv" rows="7" placeholder="name,alter&#10;Max,30&#10;Lena,25"></textarea></div>
+        <button class="btn btn-sm" onclick="csvToJson()">→ JSON</button>
+      </div>
+    </div>
+    <div class="field" style="margin-top:.75rem">
+      <label>CSV-Trennzeichen</label>
+      <select id="csv-sep" style="width:auto;display:inline-block">
+        <option value=",">Komma (,)</option>
+        <option value=";">Semikolon (;)</option>
+        <option value="&#9;">Tab (\t)</option>
+      </select>
+    </div>
+  </div>
+
+</main>
+<footer><p>Alle Berechnungen lokal. <a href="../index.html">Alle Tools</a></p></footer>
+<script src="../js/nav.js"></script>
+<script>
+function getJSON(){return document.getElementById('json-in').value.trim();}
+function setOut(text,ok=true){const el=document.getElementById('json-out');el.textContent=text;el.innerHTML=text.replace(/</g,'&lt;')+'<button class="copy-corner" onclick="copyEl(\'json-out\')">Kopieren</button>';el.dataset.raw=text;el.className='output '+(ok?'ok':'err');}
+function copyEl(id){const el=document.getElementById(id);navigator.clipboard.writeText(el.dataset.raw||el.textContent.replace('Kopieren','').trim());}
+
+function formatJSON(){try{const j=JSON.parse(getJSON());setOut(JSON.stringify(j,null,2));}catch(e){setOut('Fehler: '+e.message,false);}}
+function minifyJSON(){try{const j=JSON.parse(getJSON());setOut(JSON.stringify(j));}catch(e){setOut('Fehler: '+e.message,false);}}
+function validateJSON(){try{JSON.parse(getJSON());setOut('✅ Gültiges JSON');}catch(e){setOut('❌ Ungültig: '+e.message,false);}}
+function sortJSON(){try{const j=JSON.parse(getJSON());setOut(JSON.stringify(sortKeys(j),null,2));}catch(e){setOut('Fehler: '+e.message,false);}}
+function sortKeys(o){if(Array.isArray(o))return o.map(sortKeys);if(o&&typeof o==='object')return Object.fromEntries(Object.keys(o).sort().map(k=>[k,sortKeys(o[k])]));return o;}
+
+function jsonToCsv(){
+  try{
+    const sep=document.getElementById('csv-sep').value;
+    const data=JSON.parse(document.getElementById('jc-json').value);
+    if(!Array.isArray(data)||!data.length) throw new Error('Erwartet: Array of Objects');
+    const keys=Object.keys(data[0]);
+    const csv=[keys.join(sep),...data.map(r=>keys.map(k=>JSON.stringify(r[k]??'')).join(sep))].join('\n');
+    document.getElementById('jc-csv').value=csv;
+  }catch(e){alert(e.message);}
+}
+function csvToJson(){
+  try{
+    const sep=document.getElementById('csv-sep').value;
+    const lines=document.getElementById('jc-csv').value.trim().split('\n');
+    const keys=lines[0].split(sep).map(k=>k.trim().replace(/^"|"$/g,''));
+    const data=lines.slice(1).map(l=>{const vals=l.split(sep);return Object.fromEntries(keys.map((k,i)=>[k,(vals[i]||'').replace(/^"|"$/g,'')]));}); 
+    document.getElementById('jc-json').value=JSON.stringify(data,null,2);
+  }catch(e){alert(e.message);}
+}
+</script>
+</body></html>
